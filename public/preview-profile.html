@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview — MoMo Profile Tab</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #f3f4f6;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* Phone frame */
+    .phone {
+      width: 390px;
+      background: #f9fafb;
+      border-radius: 40px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.08);
+      max-height: 844px;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-scroll {
+      overflow-y: auto;
+      flex: 1;
+      background: #f9fafb;
+    }
+    .phone-scroll::-webkit-scrollbar { width: 0; }
+
+    /* Status bar */
+    .statusbar {
+      background: linear-gradient(135deg, #D82D8B 0%, #A91C6B 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px 4px;
+    }
+    .statusbar-time { color: white; font-size: 12px; font-weight: 600; }
+    .statusbar-icons { display: flex; gap: 6px; align-items: center; }
+    .statusbar-icons svg { width: 14px; height: 14px; color: white; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Profile header */
+    .profile-header {
+      background: linear-gradient(135deg, #D82D8B 0%, #A91C6B 100%);
+      padding: 20px 20px 24px;
+    }
+    .header-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .header-topbar-title { color: white; font-size: 16px; font-weight: 700; }
+    .header-topbar-actions { display: flex; gap: 12px; align-items: center; }
+    .icon-btn {
+      background: none; border: none; cursor: pointer;
+      position: relative; padding: 4px;
+    }
+    .icon-btn svg { width: 24px; height: 24px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .badge {
+      position: absolute; top: -2px; right: -2px;
+      width: 16px; height: 16px;
+      background: #ef4444; color: white;
+      font-size: 9px; font-weight: 700;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .user-row { display: flex; align-items: center; gap: 16px; }
+    .avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.4);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 18px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .user-name { color: white; font-size: 20px; font-weight: 700; line-height: 1.2; }
+    .user-phone { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 2px; }
+    .tier-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-top: 6px;
+      background: rgba(250,204,21,0.2);
+      border: 1px solid rgba(253,224,71,0.4);
+      color: #fde68a;
+      font-size: 11px; font-weight: 600;
+      padding: 2px 10px; border-radius: 999px;
+    }
+
+    /* Financial snapshot */
+    .financial {
+      margin: -12px 16px 0;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+      overflow: hidden;
+    }
+    .financial-accent { height: 4px; background: linear-gradient(90deg, #D82D8B, #A91C6B); }
+    .financial-body { padding: 16px 20px 20px; }
+    .balance-label { font-size: 11px; color: #9ca3af; font-weight: 500; margin-bottom: 4px; }
+    .balance-amount { font-size: 30px; font-weight: 700; color: #111827; letter-spacing: -0.5px; }
+    .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+    .stat-card { border-radius: 12px; padding: 10px 12px; }
+    .stat-card.gray { background: #f9fafb; }
+    .stat-card.pink { background: #fdf2f8; }
+    .stat-label { font-size: 11px; color: #9ca3af; margin-bottom: 2px; }
+    .stat-value { font-size: 15px; font-weight: 700; color: #111827; }
+    .stat-value.pink { color: #D82D8B; }
+    .stat-sub { font-size: 10px; color: #9ca3af; }
+    .cta-row { display: flex; gap: 12px; margin-top: 16px; }
+    .btn-primary {
+      flex: 1; padding: 10px; color: white; font-size: 14px; font-weight: 600;
+      border-radius: 12px; border: none; cursor: pointer;
+      background: linear-gradient(135deg, #D82D8B, #A91C6B);
+    }
+    .btn-outline {
+      flex: 1; padding: 10px; font-size: 14px; font-weight: 600;
+      border-radius: 12px; border: 2px solid #D82D8B;
+      color: #D82D8B; background: white; cursor: pointer;
+    }
+    .btn-primary:active, .btn-outline:active { transform: scale(0.97); }
+
+    /* Sections */
+    .section { padding: 20px 16px 0; }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .section-title { font-size: 14px; font-weight: 700; color: #111827; }
+    .section-link { font-size: 12px; color: #D82D8B; font-weight: 500; cursor: pointer; }
+    .section-tag { font-size: 10px; color: #9ca3af; background: #f3f4f6; padding: 2px 8px; border-radius: 999px; }
+
+    /* Action cards */
+    .action-card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      border: 1px solid #f3f4f6;
+      display: flex; align-items: flex-start; gap: 12px;
+      margin-bottom: 12px;
+    }
+    .card-icon {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .card-icon.amber { background: #fffbeb; }
+    .card-icon.green { background: #f0fdf4; }
+    .card-icon.purple { background: #faf5ff; }
+    .card-content { flex: 1; min-width: 0; }
+    .card-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .card-title { font-size: 13px; font-weight: 600; color: #111827; }
+    .urgent-badge {
+      background: #ef4444; color: white;
+      font-size: 9px; font-weight: 700;
+      padding: 2px 6px; border-radius: 999px; line-height: 1.4;
+    }
+    .card-desc { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+    .card-amount { font-size: 15px; font-weight: 700; color: #111827; margin-top: 4px; }
+    .card-due { font-size: 11px; color: #ef4444; font-weight: 500; margin-top: 2px; }
+    .card-cta {
+      flex-shrink: 0;
+      padding: 6px 12px; font-size: 11px; font-weight: 600;
+      border-radius: 12px; border: none; cursor: pointer;
+      color: white; background: linear-gradient(135deg, #D82D8B, #A91C6B);
+      align-self: center;
+    }
+
+    /* Smart shortcuts */
+    .shortcut-list {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      border: 1px solid #f3f4f6;
+      overflow: hidden;
+    }
+    .shortcut-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #f9fafb;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .shortcut-item:last-child { border-bottom: none; }
+    .shortcut-item:hover { background: #f9fafb; }
+    .shortcut-icon {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: #fdf2f8;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .shortcut-text { flex: 1; }
+    .shortcut-name { font-size: 13px; font-weight: 600; color: #111827; }
+    .shortcut-desc { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+    .shortcut-friends { font-size: 10px; color: #D82D8B; font-weight: 500; margin-top: 2px; }
+    .shortcut-arrow svg { width: 16px; height: 16px; stroke: #d1d5db; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Social proof */
+    .social-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      border: 1px solid #f3f4f6;
+      overflow: hidden;
+    }
+    .social-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #f9fafb;
+    }
+    .social-item:last-of-type { border-bottom: none; }
+    .social-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .bg-blue { background: #60a5fa; }
+    .bg-violet { background: #a78bfa; }
+    .bg-teal { background: #2dd4bf; }
+    .social-content { flex: 1; }
+    .social-text { font-size: 12px; color: #374151; line-height: 1.4; }
+    .social-text strong { color: #111827; }
+    .feature-tag {
+      display: inline-block;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 6px; border-radius: 999px;
+      color: white; background: #D82D8B;
+    }
+    .social-time { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+    .social-footer {
+      padding: 12px 16px;
+      background: #fdf2f8;
+      border-top: 1px solid #fbcfe8;
+      text-align: center;
+      font-size: 12px; color: #9d174d;
+    }
+
+    /* Bottom tab bar */
+    .tabbar {
+      background: white;
+      border-top: 1px solid #f3f4f6;
+      display: flex; align-items: center; justify-content: space-around;
+      padding: 8px 8px 12px;
+      flex-shrink: 0;
+    }
+    .tab-item {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 2px; padding: 4px 12px;
+      border-radius: 12px; cursor: pointer;
+      border: none; background: none;
+      transition: background 0.15s;
+    }
+    .tab-item:hover { background: #f9fafb; }
+    .tab-icon { font-size: 20px; line-height: 1; }
+    .tab-icon.qr {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #D82D8B, #A91C6B);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 18px;
+      margin-top: -20px;
+      box-shadow: 0 4px 12px rgba(216,45,139,0.4);
+    }
+    .tab-label { font-size: 10px; font-weight: 500; color: #9ca3af; }
+    .tab-label.active { color: #D82D8B; }
+
+    /* Spacer */
+    .spacer { height: 16px; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+
+    <!-- Scrollable content -->
+    <div class="phone-scroll">
+
+      <!-- Status bar -->
+      <div class="statusbar">
+        <span class="statusbar-time">9:41</span>
+        <div class="statusbar-icons">
+          <svg viewBox="0 0 24 24"><path d="M1.5 8.5a13 13 0 0121 0M5 12a10 10 0 0114 0M8.5 15.5a6 6 0 017 0M12 19h.01"/></svg>
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="7" width="20" height="11" rx="2" stroke="white" stroke-width="2"/>
+            <rect x="22" y="10" width="2" height="5" rx="1" fill="white" stroke="none"/>
+            <rect x="4" y="9" width="14" height="7" rx="1" fill="white" stroke="none"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Profile header -->
+      <div class="profile-header">
+        <div class="header-topbar">
+          <span class="header-topbar-title">Tôi</span>
+          <div class="header-topbar-actions">
+            <!-- Bell icon -->
+            <button class="icon-btn">
+              <svg viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+              <span class="badge">3</span>
+            </button>
+            <!-- Settings icon -->
+            <button class="icon-btn">
+              <svg viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="user-row">
+          <div class="avatar">NVA</div>
+          <div>
+            <div class="user-name">Nguyễn Văn A</div>
+            <div class="user-phone">0901 234 567</div>
+            <span class="tier-badge">★ MoMo Gold</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial snapshot -->
+      <div class="financial">
+        <div class="financial-accent"></div>
+        <div class="financial-body">
+          <div class="balance-label">Số dư ví MoMo</div>
+          <div class="balance-amount">2.450.000 ₫</div>
+          <div class="stats-row">
+            <div class="stat-card gray">
+              <div class="stat-label">Điểm thưởng</div>
+              <div class="stat-value">1.250</div>
+              <div class="stat-sub">điểm tích lũy</div>
+            </div>
+            <div class="stat-card pink">
+              <div class="stat-label">Hoàn tiền chờ</div>
+              <div class="stat-value pink">85.000 ₫</div>
+              <div class="stat-sub">sẵn sàng nhận</div>
+            </div>
+          </div>
+          <div class="cta-row">
+            <button class="btn-primary">Nạp tiền</button>
+            <button class="btn-outline">Rút tiền</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action cards -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Dành cho bạn</span>
+          <span class="section-link">Xem tất cả →</span>
+        </div>
+
+        <!-- Bill card -->
+        <div class="action-card">
+          <div class="card-icon amber">⚡</div>
+          <div class="card-content">
+            <div class="card-title-row">
+              <span class="card-title">Tiền điện tháng 3</span>
+              <span class="urgent-badge">SẮP ĐẾN HẠN</span>
+            </div>
+            <div class="card-desc">EVN HCMC - Sắp đến hạn</div>
+            <div class="card-amount">450.000 ₫</div>
+            <div class="card-due">Hạn: 25/03</div>
+          </div>
+          <button class="card-cta">Thanh toán ngay</button>
+        </div>
+
+        <!-- Cashback card -->
+        <div class="action-card">
+          <div class="card-icon green">💰</div>
+          <div class="card-content">
+            <div class="card-title-row">
+              <span class="card-title">Hoàn tiền chưa nhận</span>
+            </div>
+            <div class="card-desc">Từ 5 giao dịch tuần trước</div>
+            <div class="card-amount">85.000 ₫</div>
+          </div>
+          <button class="card-cta">Nhận ngay</button>
+        </div>
+
+        <!-- Offer card -->
+        <div class="action-card">
+          <div class="card-icon purple">🎁</div>
+          <div class="card-content">
+            <div class="card-title-row">
+              <span class="card-title">Ưu đãi dành riêng cho bạn</span>
+            </div>
+            <div class="card-desc">Mua sắm tại Lazada hoàn 15%</div>
+          </div>
+          <button class="card-cta">Xem ưu đãi</button>
+        </div>
+      </div>
+
+      <!-- Smart shortcuts -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Khám phá thêm</span>
+          <span class="section-tag">Dành riêng cho bạn</span>
+        </div>
+        <div class="shortcut-list">
+          <div class="shortcut-item">
+            <div class="shortcut-icon">📈</div>
+            <div class="shortcut-text">
+              <div class="shortcut-name">Đầu tư</div>
+              <div class="shortcut-desc">Sinh lời từ 6.5%/năm</div>
+              <div class="shortcut-friends">12 bạn bè đang dùng</div>
+            </div>
+            <div class="shortcut-arrow"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></div>
+          </div>
+          <div class="shortcut-item">
+            <div class="shortcut-icon">🏦</div>
+            <div class="shortcut-text">
+              <div class="shortcut-name">Tiết kiệm</div>
+              <div class="shortcut-desc">Gửi linh hoạt, rút bất kỳ</div>
+              <div class="shortcut-friends">8 bạn bè đang dùng</div>
+            </div>
+            <div class="shortcut-arrow"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></div>
+          </div>
+          <div class="shortcut-item">
+            <div class="shortcut-icon">🛡️</div>
+            <div class="shortcut-text">
+              <div class="shortcut-name">Bảo hiểm</div>
+              <div class="shortcut-desc">Bảo vệ sức khỏe từ 15K/ngày</div>
+              <div class="shortcut-friends">5 bạn bè đang dùng</div>
+            </div>
+            <div class="shortcut-arrow"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Social proof -->
+      <div class="section" style="margin-bottom: 0;">
+        <div class="section-header">
+          <span class="section-title">Bạn bè của bạn</span>
+          <span class="section-link">Xem thêm →</span>
+        </div>
+        <div class="social-card">
+          <div class="social-item">
+            <div class="social-avatar bg-blue">TM</div>
+            <div class="social-content">
+              <div class="social-text"><strong>Trần Minh</strong> vừa đầu tư vào <span class="feature-tag">MoMo Fund</span></div>
+              <div class="social-time">2 phút trước</div>
+            </div>
+          </div>
+          <div class="social-item">
+            <div class="social-avatar bg-violet">LH</div>
+            <div class="social-content">
+              <div class="social-text"><strong>Lê Thu Hà</strong> nhận hoàn tiền từ <span class="feature-tag">MoMo Pay</span></div>
+              <div class="social-time">1 giờ trước</div>
+            </div>
+          </div>
+          <div class="social-item">
+            <div class="social-avatar bg-teal">PD</div>
+            <div class="social-content">
+              <div class="social-text"><strong>Phạm Dũng</strong> mua bảo hiểm <span class="feature-tag">MoMo Shield</span></div>
+              <div class="social-time">3 giờ trước</div>
+            </div>
+          </div>
+          <div class="social-footer">
+            🔥 <strong>12 bạn bè</strong> đã thực hiện giao dịch tuần này
+          </div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+    </div><!-- end phone-scroll -->
+
+    <!-- Bottom tab bar (fixed at bottom of phone) -->
+    <div class="tabbar">
+      <button class="tab-item">
+        <span class="tab-icon">🏠</span>
+        <span class="tab-label">Trang chủ</span>
+      </button>
+      <button class="tab-item">
+        <span class="tab-icon">⚡</span>
+        <span class="tab-label">Dịch vụ</span>
+      </button>
+      <button class="tab-item">
+        <span class="tab-icon qr">◉</span>
+        <span class="tab-label">QR</span>
+      </button>
+      <button class="tab-item">
+        <span class="tab-icon">💳</span>
+        <span class="tab-label">Ví</span>
+      </button>
+      <button class="tab-item">
+        <span class="tab-icon">👤</span>
+        <span class="tab-label active">Tôi</span>
+      </button>
+    </div>
+
+  </div><!-- end phone -->
+</body>
+</html>
