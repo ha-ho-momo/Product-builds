@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#FFFFFF" id="theme-color"/>
+<title>MoMo — Rà soát tài khoản cũ</title>
+<link rel="manifest" href="./manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{--page-bg:#F5F5F5;--sat:env(safe-area-inset-top,0px);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{min-height:calc(100% + env(safe-area-inset-top));overflow:hidden;background:#FFFFFF;}
+body{margin:0;padding:0;height:100%;overflow:hidden;background:#FFFFFF;font-family:'Be Vietnam Pro',-apple-system,'Helvetica Neue',Arial,sans-serif;color:#1A1A1A;}
+#app{position:fixed;inset:0;overflow:hidden;}
+.status-spacer{flex-shrink:0;height:max(calc(var(--sat) + 4px),24px);}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;}
+
+/* screens */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transform:translateX(100%);transition:opacity .3s,transform .32s cubic-bezier(.4,0,.2,1);background:var(--page-bg);}
+.screen.active{opacity:1;pointer-events:all;transform:translateX(0);}
+.screen.leaving{opacity:0;transform:translateX(-30px);pointer-events:none;}
+
+/* header */
+.hdr-pink{background:linear-gradient(180deg,#FFE4F0 0%,#FFF5F9 40%,#F5F5F5 100%);flex-shrink:0;}
+.nav{display:flex;align-items:center;gap:10px;padding:6px 12px 10px;}
+.nav-back{width:36px;height:34px;border-radius:20px;background:rgba(0,0,0,0.06);border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.nav-title{flex:1;text-align:center;font-size:16px;font-weight:700;color:#1A1A1A;}
+.nav-cap{display:flex;align-items:center;gap:2px;background:#fff;border-radius:20px;border:1px solid #E0E0E0;padding:5px 8px;flex-shrink:0;}
+.nav-cap svg{display:block;}
+.nav-spacer{width:36px;flex-shrink:0;}
+
+/* cards */
+.card{background:#fff;border-radius:16px;margin:0 12px 12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.section-label{font-size:13px;font-weight:700;color:#1A1A1A;padding:12px 16px 6px;}
+
+/* rows */
+.row-item{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid #F0F0F0;}
+.row-item:last-child{border-bottom:none;}
+
+/* inputs */
+.input-wrap{border:1.5px solid #E0E0E0;border-radius:10px;padding:8px 14px 10px;margin-bottom:14px;position:relative;transition:border-color .15s;}
+.input-wrap.focused{border-color:#E91E8C;}
+.input-label{font-size:12px;font-weight:500;color:#999;transition:color .15s;}
+.input-wrap.focused .input-label{color:#E91E8C;}
+.input-row{display:flex;align-items:center;gap:8px;}
+.input-field{font-size:16px;color:#1A1A1A;border:none;outline:none;width:100%;background:transparent;padding:2px 0 0;font-family:inherit;}
+.input-field::placeholder{color:#CCC;}
+.input-wrap.error{border-color:#FF5722;animation:shake .4s ease;}
+.input-wrap.error .input-label{color:#FF5722;}
+.eye-btn{background:none;border:none;padding:2px;flex-shrink:0;display:flex;align-items:center;}
+
+/* otp */
+.otp-row{display:flex;gap:12px;justify-content:center;margin:6px 0 4px;}
+.otp-box{width:52px;height:58px;border:1.5px solid #E0E0E0;border-radius:10px;font-size:22px;font-weight:700;text-align:center;color:#1A1A1A;outline:none;font-family:inherit;background:#fff;}
+.otp-box:focus{border-color:#E91E8C;}
+.otp-row.error .otp-box{border-color:#FF5722;}
+.otp-row.error{animation:shake .4s ease;}
+
+/* checkbox */
+.tnc-check-row{display:flex;align-items:flex-start;gap:10px;padding:2px 0;}
+.tnc-checkbox{width:22px;height:22px;border-radius:6px;border:1.8px solid #CCC;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#fff;margin-top:1px;transition:all .15s;}
+.tnc-checkbox.on{background:#E8197D;border-color:#E8197D;}
+.tnc-check-row.error .tnc-checkbox{border-color:#FF5722;animation:shake .4s ease;}
+
+/* buttons */
+.btn-pink{width:100%;height:52px;background:#E8197D;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;box-shadow:0 4px 16px rgba(232,25,125,0.3);font-family:inherit;}
+.btn-pink:disabled{background:#E0E0E0;color:#999;box-shadow:none;}
+.btn-outline{width:100%;height:52px;background:#fff;border:1.5px solid #E91E8C;color:#E91E8C;border-radius:14px;margin-top:10px;font-size:16px;font-weight:700;font-family:inherit;}
+.btn-danger{width:100%;height:52px;background:#F44336;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;box-shadow:0 4px 16px rgba(244,67,54,0.28);font-family:inherit;}
+.btn-danger-outline{width:100%;height:52px;background:#fff;border:1.5px solid #F44336;color:#F44336;border-radius:14px;margin-top:10px;font-size:16px;font-weight:700;font-family:inherit;}
+.btn-text{color:#E91E8C;font-size:15px;font-weight:600;padding:12px;background:none;border:none;font-family:inherit;}
+
+.bottom-area{flex-shrink:0;padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));background:var(--page-bg);}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.badge-green{background:#E8F5E9;color:#2E7D32;}
+.badge-red{background:#FFEBEE;color:#C62828;}
+.badge-gray{background:#EEEEEE;color:#777;}
+.badge-amber{background:#FFF8E1;color:#B7791F;}
+
+.demo-btn{background:transparent;color:#CCC;border:1px dashed #E0E0E0;border-radius:6px;padding:4px 8px;font-size:10px;opacity:0.6;font-family:inherit;}
+
+/* selection cards */
+.selection-card{border:2px solid #E0E0E0;border-radius:14px;padding:14px 16px;margin-bottom:12px;background:#fff;display:flex;gap:12px;align-items:flex-start;}
+.selection-card.selected{border-color:#E91E8C;background:#FFF0F7;}
+
+/* account card */
+.acct-card{background:#fff;border-radius:16px;margin:0 12px 12px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.acct-card.tappable:active{background:#FFF0F7;}
+.acct-top{display:flex;align-items:center;gap:12px;}
+.acct-avatar{width:44px;height:44px;border-radius:22px;background:linear-gradient(135deg,#FFB0D6,#E8197D);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:17px;flex-shrink:0;}
+.acct-phone{font-size:16px;font-weight:700;color:#1A1A1A;}
+.acct-sub{font-size:12px;color:#999;margin-top:2px;}
+.acct-metrics{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.metric-chip{display:flex;align-items:center;gap:5px;background:#F7F7F7;border-radius:9px;padding:6px 10px;font-size:12px;font-weight:600;color:#555;}
+
+/* info notice */
+.notice{display:flex;gap:10px;background:#FFF0F7;border-radius:12px;padding:12px 14px;}
+.notice-text{font-size:13px;color:#666;line-height:1.5;}
+.warn-notice{display:flex;gap:10px;background:#FEECEB;border-radius:12px;padding:12px 14px;border:1px solid #FFCDD2;}
+.warn-notice-text{font-size:13px;color:#8a2b22;line-height:1.55;}
+
+/* hero circle */
+.hero-circle{width:110px;height:110px;border-radius:55px;background:linear-gradient(135deg,#FFF0F7,#FDE8F3);display:flex;align-items:center;justify-content:center;margin:0 auto;}
+.benefit-row{display:flex;gap:14px;align-items:flex-start;padding:12px 0;}
+.benefit-ic{width:40px;height:40px;border-radius:12px;background:#FFF0F7;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.benefit-title{font-size:15px;font-weight:700;color:#1A1A1A;}
+.benefit-sub{font-size:13px;color:#666;margin-top:2px;line-height:1.5;}
+
+/* detail list */
+.dl-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #F0F0F0;}
+.dl-row:last-child{border-bottom:none;}
+.dl-label{font-size:14px;color:#666;}
+.dl-value{font-size:14px;font-weight:700;color:#1A1A1A;text-align:right;}
+
+/* success */
+.check-circle{width:88px;height:88px;border-radius:44px;background:#E8F5E9;display:flex;align-items:center;justify-content:center;margin:0 auto;}
+.xcircle{width:88px;height:88px;border-radius:44px;background:#FEECEB;display:flex;align-items:center;justify-content:center;margin:0 auto;}
+
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+/* ===== HOMESCREEN ===== */
+.home-mini{position:absolute;top:0;left:0;right:0;z-index:6;background:linear-gradient(135deg,#AF1168 0%,#E8197D 50%,#FF6FAE 100%);opacity:0;transform:translateY(-10px);pointer-events:none;transition:opacity .28s ease,transform .28s ease;overflow:hidden;}
+.home-mini.visible{transform:translateY(0);opacity:1;pointer-events:all;}
+.home-mini-top{display:flex;align-items:center;gap:8px;padding:6px 14px 0;}
+.home-mini-search{flex:1;height:32px;border-radius:16px;background:rgba(255,255,255,0.2);display:flex;align-items:center;gap:6px;padding:0 12px;color:rgba(255,255,255,0.9);font-size:12px;}
+.home-mini-chips{display:flex;gap:6px;padding:8px 14px 10px;overflow-x:auto;}
+.home-mini-chip{display:flex;align-items:center;gap:5px;padding:5px 12px 5px 8px;border-radius:20px;background:rgba(255,255,255,0.2);white-space:nowrap;flex-shrink:0;}
+.home-mini-chip-label{font-size:11px;font-weight:600;color:#fff;}
+.home-header{background:linear-gradient(135deg,#AF1168 0%,#E8197D 50%,#FF6FAE 100%);position:absolute;top:0;left:0;right:0;z-index:5;overflow:hidden;transition:opacity .28s ease,transform .28s ease;}
+.home-header.collapsed{opacity:0;transform:translateY(-20px);pointer-events:none;}
+.home-header::before{content:'';position:absolute;top:-40px;right:-30px;width:160px;height:160px;border-radius:80px;background:rgba(255,255,255,0.08);}
+.home-header::after{content:'';position:absolute;bottom:-30px;left:-20px;width:120px;height:120px;border-radius:60px;background:rgba(255,255,255,0.05);}
+.home-top-bar{display:flex;align-items:center;gap:10px;padding:2px 14px 8px;position:relative;z-index:2;}
+.home-avatar{width:36px;height:36px;border-radius:18px;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.home-search{flex:1;height:36px;border-radius:18px;background:rgba(255,255,255,0.2);display:flex;align-items:center;gap:8px;padding:0 14px;color:rgba(255,255,255,0.9);font-size:13px;}
+.home-notif{width:36px;height:36px;border-radius:18px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
+.home-notif .dot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:4px;background:#FF3B30;border:1.5px solid #E8197D;}
+.home-balance{padding:2px 18px 10px;position:relative;z-index:2;}
+.home-bal-label{font-size:12px;color:rgba(255,255,255,0.85);font-weight:500;}
+.home-bal-amount{font-size:26px;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px;margin-top:2px;}
+.home-hdr-actions{display:flex;justify-content:space-around;padding:2px 12px 6px;position:relative;z-index:2;}
+.home-hdr-act{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.home-hdr-act-icon{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;}
+.home-hdr-act-label{font-size:11px;font-weight:600;color:#fff;}
+.home-promo{margin:6px 18px 14px;background:rgba(255,255,255,0.15);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;position:relative;z-index:2;}
+.home-promo-text{font-size:12px;color:#fff;font-weight:500;line-height:1.4;flex:1;}
+.home-services{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:14px 12px 8px;}
+.home-svc{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 2px;}
+.home-svc-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;}
+.home-svc-label{font-size:11px;font-weight:500;color:#1A1A1A;text-align:center;line-height:1.2;}
+.home-banner{margin:4px 12px 12px;border-radius:14px;height:96px;background:linear-gradient(135deg,#FF6FAE 0%,#E8197D 100%);position:relative;overflow:hidden;display:flex;align-items:center;padding:0 18px;}
+.home-banner-deco{position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:60px;background:rgba(255,255,255,0.12);}
+.home-suggest-card{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin:0 12px 10px;display:flex;align-items:center;gap:12px;}
+.home-suggest-card:active{background:#FFF0F7;}
+.home-tab-bar{flex-shrink:0;display:flex;align-items:flex-end;background:#fff;border-top:1px solid #F0F0F0;padding:6px 0 0;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px));position:relative;z-index:8;}
+.home-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding-bottom:4px;}
+.home-tab-label{font-size:10px;font-weight:600;color:#999;}
+.home-tab.active .home-tab-label{color:#E8197D;}
+.home-tab-center{flex:1;display:flex;flex-direction:column;align-items:center;}
+.home-tab-center-btn{width:50px;height:50px;border-radius:25px;background:linear-gradient(135deg,#E8197D,#FF6FAE);display:flex;align-items:center;justify-content:center;margin-top:-18px;box-shadow:0 4px 12px rgba(232,25,125,0.4);}
+
+/* keyboard cta clone */
+#kb-cta{display:none;position:fixed;left:0;right:0;z-index:9999;}
+#kb-cta .bottom-area{padding-bottom:12px;}
+
+/* survey */
+.survey-section-hdr{background:#FFF0F7;padding:10px 16px;margin-bottom:2px;}
+.survey-section-hdr-text{font-size:12px;font-weight:700;color:#E91E8C;line-height:1.4;}
+.survey-q{padding:14px 16px;border-bottom:1px solid #F0F0F0;background:#fff;}
+.survey-q:last-child{border-bottom:none;}
+.survey-q-num{display:inline-block;width:24px;height:24px;border-radius:12px;background:#E91E8C;color:#fff;font-size:11px;font-weight:700;line-height:24px;text-align:center;flex-shrink:0;margin-right:8px;}
+.survey-q-top{display:flex;align-items:flex-start;}
+.survey-q-text{flex:1;}
+.survey-q-vi{font-size:14px;font-weight:600;color:#1A1A1A;line-height:1.45;}
+.survey-rate-row{display:flex;justify-content:space-between;margin-top:10px;gap:4px;}
+.survey-rate-btn{flex:1;height:36px;border-radius:8px;border:1.5px solid #E0E0E0;background:#fff;font-size:13px;font-weight:600;color:#999;cursor:pointer;font-family:inherit;}
+.survey-rate-btn.sel{background:#E91E8C;border-color:#E91E8C;color:#fff;}
+.survey-scale-labels{display:flex;justify-content:space-between;margin-top:5px;}
+.survey-scale-labels span{font-size:10px;color:#BBBBBB;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ============ S0 — MoMo HOMESCREEN ============ -->
+<div id="s0" class="screen">
+  <div class="home-mini" id="home-mini">
+    <div class="status-spacer" style="background:transparent;"></div>
+    <div class="home-mini-inner">
+      <div class="home-mini-top">
+        <div class="home-avatar" style="width:28px;height:28px;border-radius:14px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+        </div>
+        <div class="home-mini-search">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
+          <span>Tìm kiếm</span>
+        </div>
+        <div class="home-notif" style="width:28px;height:28px;border-radius:14px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a6 6 0 00-6 6c0 5-2 6-2 6h16s-2-1-2-6a6 6 0 00-6-6zM10 20a2 2 0 004 0"/></svg>
+          <span class="dot"></span>
+        </div>
+      </div>
+      <div class="home-mini-chips">
+        <div class="home-mini-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M12 3v18M5 8h14M5 16h14"/></svg><span class="home-mini-chip-label">Nạp tiền</span></div>
+        <div class="home-mini-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M4 12h16M14 6l6 6-6 6"/></svg><span class="home-mini-chip-label">Chuyển tiền</span></div>
+        <div class="home-mini-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M4 10h16"/></svg><span class="home-mini-chip-label">Thanh toán</span></div>
+        <div class="home-mini-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/></svg><span class="home-mini-chip-label">QR Code</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-header" id="home-header-full">
+    <div class="status-spacer" style="background:transparent;"></div>
+    <div class="home-top-bar">
+      <div class="home-avatar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+      </div>
+      <div class="home-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
+        <span>Tìm kiếm dịch vụ, tiện ích...</span>
+      </div>
+      <div class="home-notif">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a6 6 0 00-6 6c0 5-2 6-2 6h16s-2-1-2-6a6 6 0 00-6-6zM10 20a2 2 0 004 0"/></svg>
+        <span class="dot"></span>
+      </div>
+    </div>
+    <div class="home-balance">
+      <div class="home-bal-label">Số dư MoMo</div>
+      <div class="home-bal-amount">1.284.500₫
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+    </div>
+    <div class="home-hdr-actions">
+      <div class="home-hdr-act"><div class="home-hdr-act-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div><span class="home-hdr-act-label">Nạp tiền</span></div>
+      <div class="home-hdr-act"><div class="home-hdr-act-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M4 12h16M14 6l6 6-6 6"/></svg></div><span class="home-hdr-act-label">Chuyển tiền</span></div>
+      <div class="home-hdr-act"><div class="home-hdr-act-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M4 10h16"/></svg></div><span class="home-hdr-act-label">Thanh toán</span></div>
+      <div class="home-hdr-act"><div class="home-hdr-act-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/></svg></div><span class="home-hdr-act-label">QR Code</span></div>
+    </div>
+    <div class="home-promo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M20 12l-8 8-8-8 8-8z"/></svg>
+      <span class="home-promo-text">Ưu đãi hôm nay: Hoàn 15% khi thanh toán hóa đơn điện</span>
+    </div>
+  </div>
+
+  <div class="scroll" id="home-scroll" style="background:#F5F5F5;flex:1;position:relative;z-index:1;">
+    <!-- SECURITY / REVIEW suggestion -->
+    <div class="section-label" style="padding-top:14px;">Bảo mật tài khoản</div>
+    <div class="home-suggest-card" onclick="goTo(1)" style="border:1.5px solid #FFD1E8;">
+      <div style="width:44px;height:44px;border-radius:14px;background:#FFF0F7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:15px;font-weight:700;color:#1A1A1A;">Rà soát tài khoản cũ của bạn</div>
+        <div style="font-size:12.5px;color:#666;margin-top:3px;line-height:1.45;">Chúng tôi phát hiện <b style="color:#E8197D;">3 tài khoản MoMo</b> khác cùng CCCD của bạn. Xử lý ngay để tránh rò rỉ thông tin.</div>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#CCC" stroke-width="2" style="flex-shrink:0;"><path d="M9 6l6 6-6 6"/></svg>
+    </div>
+
+    <div class="section-label">Dịch vụ</div>
+    <div class="home-services">
+      <div class="home-svc"><div class="home-svc-icon" style="background:#FFF0F7;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="2"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg></div><span class="home-svc-label">Nạp điện thoại</span></div>
+      <div class="home-svc"><div class="home-svc-icon" style="background:#E3F2FD;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1976D2" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg></div><span class="home-svc-label">Điện nước</span></div>
+      <div class="home-svc"><div class="home-svc-icon" style="background:#E8F5E9;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5a2 2 0 012-2h6a2 2 0 012 2v2"/></svg></div><span class="home-svc-label">Đặt vé xe</span></div>
+      <div class="home-svc"><div class="home-svc-icon" style="background:#FFF3E0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></div><span class="home-svc-label">Bảo hiểm</span></div>
+      <div class="home-svc"><div class="home-svc-icon" style="background:#F3E5F5;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7B1FA2" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg></div><span class="home-svc-label">Mua sắm</span></div>
+      <div class="home-svc"><div class="home-svc-icon" style="background:#E0F7FA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00838F" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg></div><span class="home-svc-label">Giải trí</span></div>
+      <div class="home-svc"><div class="home-svc-icon" style="background:#FFF8E1;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B7791F" stroke-width="2"><path d="M4 8h16v10H4z"/><path d="M4 8l8-4 8 4"/></svg></div><span class="home-svc-label">Tiết kiệm</span></div>
+      <div class="home-svc"><div class="home-svc-icon" style="background:#F5F5F5;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#777" stroke-width="2"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg></div><span class="home-svc-label">Thêm</span></div>
+    </div>
+
+    <div class="home-banner">
+      <div class="home-banner-deco"></div>
+      <div style="position:relative;z-index:2;">
+        <div style="font-size:15px;font-weight:800;color:#fff;">Bảo vệ tài khoản của bạn</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.9);margin-top:4px;">Rà soát & xử lý tài khoản cũ chỉ trong 1 phút</div>
+      </div>
+    </div>
+
+    <div class="section-label">Gợi ý cho bạn</div>
+    <div class="home-suggest-card">
+      <div style="width:40px;height:40px;border-radius:12px;background:#E8F5E9;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"/></svg></div>
+      <div style="flex:1;"><div style="font-size:14px;font-weight:700;">Liên kết ngân hàng</div><div style="font-size:12px;color:#666;margin-top:2px;">Nạp/rút tiền dễ dàng hơn</div></div>
+    </div>
+    <div style="height:24px;"></div>
+  </div>
+
+  <div class="home-tab-bar" id="home-tab-bar" style="position:relative;z-index:8;">
+    <div class="home-tab active"><svg width="22" height="22" viewBox="0 0 24 24" fill="#E8197D"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg><span class="home-tab-label">Trang chủ</span></div>
+    <div class="home-tab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M4 12h16M14 6l6 6-6 6"/></svg><span class="home-tab-label">Chuyển tiền</span></div>
+    <div class="home-tab-center"><div class="home-tab-center-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/></svg></div><span class="home-tab-label">Quét QR</span></div>
+    <div class="home-tab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M12 2a6 6 0 00-6 6c0 5-2 6-2 6h16s-2-1-2-6a6 6 0 00-6-6zM10 20a2 2 0 004 0"/></svg><span class="home-tab-label">Thông báo</span></div>
+    <div class="home-tab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg><span class="home-tab-label">Cá nhân</span></div>
+  </div>
+</div>
+
+<!-- ============ S1 — FEATURE INTRO (white) ============ -->
+<div id="s1" class="screen">
+  <div class="status-spacer" style="background:#fff;"></div>
+  <div style="display:flex;justify-content:flex-end;padding:2px 16px;">
+    <button class="btn-text" style="padding:8px 4px;" onclick="goTo(0)">Bỏ qua</button>
+  </div>
+  <div class="scroll" style="background:#fff;">
+    <div style="padding:8px 24px 0;">
+      <div class="hero-circle">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="1.8"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <div style="text-align:center;margin-top:18px;">
+        <div style="font-size:22px;font-weight:800;color:#1A1A1A;letter-spacing:-0.3px;">Rà soát & bảo vệ<br/>tài khoản cũ</div>
+        <div style="font-size:14px;color:#666;margin-top:8px;line-height:1.55;">MoMo tìm thấy các tài khoản khác đăng ký cùng CCCD/CMND của bạn. Xử lý ngay để tránh rò rỉ thông tin khi số điện thoại cũ bị thu hồi.</div>
+      </div>
+      <div style="margin-top:20px;">
+        <div class="benefit-row">
+          <div class="benefit-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></div>
+          <div><div class="benefit-title">Chống rò rỉ thông tin</div><div class="benefit-sub">Ngăn người mua lại SIM cũ truy cập vào KYC, lịch sử giao dịch của bạn.</div></div>
+        </div>
+        <div class="benefit-row">
+          <div class="benefit-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg></div>
+          <div><div class="benefit-title">Gỡ liên kết ngân hàng</div><div class="benefit-sub">Tách thẻ/tài khoản ngân hàng khỏi ví cũ chỉ với một chạm.</div></div>
+        </div>
+        <div class="benefit-row">
+          <div class="benefit-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg></div>
+          <div><div class="benefit-title">Không mất số dư</div><div class="benefit-sub">Số dư còn lại được hoàn về ngân hàng của bạn trước khi hủy.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-area" style="background:#fff;">
+    <button class="btn-pink" onclick="goTo(2)">Bắt đầu rà soát</button>
+  </div>
+</div>
+
+<!-- ============ S2 — IDENTITY VERIFY ============ -->
+<div id="s2" class="screen">
+  <div class="hdr-pink">
+    <div class="status-spacer"></div>
+    <div class="nav">
+      <button class="nav-back" onclick="goTo(1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="nav-title">Xác thực danh tính</div>
+      <div class="nav-cap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.8"><path d="M4 12a8 8 0 0116 0v4a2 2 0 01-2 2h-1v-5h3M4 12v4a2 2 0 002 2h1v-5H4"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#1A1A1A" style="margin-left:4px;"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="card" style="text-align:center;">
+      <div style="width:72px;height:72px;border-radius:36px;background:#FFF0F7;display:flex;align-items:center;justify-content:center;margin:6px auto 0;">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M14 9h4M14 13h4M5 16h9"/></svg>
+      </div>
+      <div style="font-size:18px;font-weight:800;margin-top:12px;">Xác nhận đây là bạn</div>
+      <div style="font-size:14px;color:#666;margin-top:6px;line-height:1.5;">Chúng tôi cần xác thực CCCD/CMND để tìm mọi tài khoản MoMo cùng danh tính với bạn.</div>
+    </div>
+    <div class="card" style="padding:4px 16px;">
+      <div class="dl-row"><span class="dl-label">Họ và tên</span><span class="dl-value">NGUYỄN VĂN AN</span></div>
+      <div class="dl-row"><span class="dl-label">Số CCCD</span><span class="dl-value">0790 •••• •• 45</span></div>
+      <div class="dl-row"><span class="dl-label">Ngày sinh</span><span class="dl-value">12/08/1990</span></div>
+    </div>
+    <div style="padding:0 16px;">
+      <div class="notice">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <div class="notice-text">Mã xác thực (OTP) sẽ được gửi tới số điện thoại <b>đang đăng nhập</b> (0987 •• 321) để bảo vệ tài khoản.</div>
+      </div>
+    </div>
+    <div style="height:16px;"></div>
+  </div>
+  <div class="bottom-area">
+    <button class="btn-pink" onclick="submitVerify()">Gửi mã xác thực</button>
+  </div>
+</div>
+
+<!-- ============ S3 — OTP ============ -->
+<div id="s3" class="screen">
+  <div class="hdr-pink">
+    <div class="status-spacer"></div>
+    <div class="nav">
+      <button class="nav-back" onclick="goTo(2)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="nav-title">Nhập mã xác thực</div>
+      <div class="nav-cap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.8"><path d="M4 12a8 8 0 0116 0v4a2 2 0 01-2 2h-1v-5h3M4 12v4a2 2 0 002 2h1v-5H4"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#1A1A1A" style="margin-left:4px;"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="card">
+      <div style="text-align:center;font-size:14px;color:#666;line-height:1.5;">Nhập mã gồm 4 chữ số vừa gửi tới<br/><b style="color:#1A1A1A;">0987 •• 321</b></div>
+      <div class="otp-row" id="otp-row">
+        <input class="otp-box" id="otp0" type="tel" inputmode="numeric" autocomplete="one-time-code" maxlength="1" oninput="otpInput(this,0)" onkeydown="otpKey(event,0)" onfocus="scheduleShowKbCta()" onblur="scheduleHideKbCta()"/>
+        <input class="otp-box" id="otp1" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,1)" onkeydown="otpKey(event,1)" onfocus="scheduleShowKbCta()" onblur="scheduleHideKbCta()"/>
+        <input class="otp-box" id="otp2" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,2)" onkeydown="otpKey(event,2)" onfocus="scheduleShowKbCta()" onblur="scheduleHideKbCta()"/>
+        <input class="otp-box" id="otp3" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,3)" onkeydown="otpKey(event,3)" onfocus="scheduleShowKbCta()" onblur="scheduleHideKbCta()"/>
+      </div>
+      <div style="text-align:center;margin-top:10px;">
+        <span id="otp-timer" style="font-size:13px;color:#999;">Gửi lại mã sau <b style="color:#1A1A1A;">30</b>s</span>
+      </div>
+      <div style="text-align:center;margin-top:6px;">
+        <button class="demo-btn" onclick="demoOtp()">demo fill</button>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-area">
+    <button class="btn-pink" onclick="submitOtp()">Xác nhận</button>
+  </div>
+</div>
+
+<!-- ============ S4 — ACCOUNTS LIST ============ -->
+<div id="s4" class="screen">
+  <div class="hdr-pink">
+    <div class="status-spacer"></div>
+    <div class="nav">
+      <button class="nav-back" onclick="goTo(0)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="nav-title">Tài khoản của bạn</div>
+      <div class="nav-cap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.8"><path d="M4 12a8 8 0 0116 0v4a2 2 0 01-2 2h-1v-5h3M4 12v4a2 2 0 002 2h1v-5H4"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#1A1A1A" style="margin-left:4px;"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="scroll" id="accounts-scroll">
+    <div style="padding:2px 16px 4px;">
+      <div class="notice" id="list-summary">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <div class="notice-text" id="list-summary-text"></div>
+      </div>
+    </div>
+    <div class="section-label">Tài khoản đang sử dụng</div>
+    <div id="current-acct-wrap"></div>
+    <div class="section-label" id="old-label">Tài khoản cũ cần xử lý</div>
+    <div id="old-accts-wrap"></div>
+    <div style="height:16px;"></div>
+  </div>
+</div>
+
+<!-- ============ S5 — ACCOUNT DETAIL ============ -->
+<div id="s5" class="screen">
+  <div class="hdr-pink">
+    <div class="status-spacer"></div>
+    <div class="nav">
+      <button class="nav-back" onclick="goTo(4)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="nav-title">Chi tiết tài khoản</div>
+      <div class="nav-cap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.8"><path d="M4 12a8 8 0 0116 0v4a2 2 0 01-2 2h-1v-5h3M4 12v4a2 2 0 002 2h1v-5H4"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#1A1A1A" style="margin-left:4px;"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="scroll" id="detail-scroll"></div>
+  <div class="bottom-area" id="detail-actions"></div>
+</div>
+
+<!-- ============ S6 — CONFIRM ACTION ============ -->
+<div id="s6" class="screen">
+  <div class="hdr-pink">
+    <div class="status-spacer"></div>
+    <div class="nav">
+      <button class="nav-back" onclick="goTo(5)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="nav-title" id="confirm-nav-title">Xác nhận</div>
+      <div class="nav-cap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.8"><path d="M4 12a8 8 0 0116 0v4a2 2 0 01-2 2h-1v-5h3M4 12v4a2 2 0 002 2h1v-5H4"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#1A1A1A" style="margin-left:4px;"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="scroll" id="confirm-scroll">
+    <div id="confirm-body"></div>
+    <div class="card" style="padding:14px 16px;">
+      <div class="input-wrap" id="pin-wrap" style="margin-bottom:0;">
+        <div class="input-label">Mã PIN MoMo (6 số)</div>
+        <div class="input-row">
+          <input id="auth-pin" class="input-field pin-field" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="Nhập 6 chữ số" oninput="onAuthPin()" onfocus="focusWrap('pin-wrap')" onblur="blurWrap('pin-wrap')"/>
+          <button class="eye-btn" onclick="togglePwd('auth-pin','pin-eye')" id="pin-eye"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+      </div>
+      <div style="text-align:right;margin-top:8px;"><button class="demo-btn" onclick="demoPin()">demo fill</button></div>
+    </div>
+    <div style="padding:0 16px;">
+      <div class="tnc-check-row" id="ack-row" onclick="toggleAck()">
+        <div class="tnc-checkbox" id="ack-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 12l4 4 10-11"/></svg></div>
+        <div style="font-size:13px;color:#666;line-height:1.5;" id="ack-text"></div>
+      </div>
+    </div>
+    <div style="height:16px;"></div>
+  </div>
+  <div class="bottom-area" id="confirm-actions"></div>
+</div>
+
+<!-- ============ S7 — SUCCESS (white) ============ -->
+<div id="s7" class="screen">
+  <div class="status-spacer" style="background:#fff;"></div>
+  <div class="scroll" style="background:#fff;">
+    <div style="padding:40px 24px 0;text-align:center;">
+      <div class="check-circle">
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2.4"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M7 12.5l3.5 3.5L17 8.5"/></svg>
+      </div>
+      <div id="success-title" style="font-size:22px;font-weight:800;margin-top:18px;">Thành công</div>
+      <div id="success-sub" style="font-size:14px;color:#666;margin-top:8px;line-height:1.55;"></div>
+    </div>
+    <div class="card" id="success-summary" style="margin-top:22px;padding:4px 16px;"></div>
+    <div style="padding:0 16px;">
+      <div class="notice" id="success-note">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <div class="notice-text" id="success-note-text"></div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-area" style="background:#fff;">
+    <button class="btn-pink" onclick="afterSuccessNext()">Xong &amp; đánh giá trải nghiệm</button>
+    <button class="btn-outline" onclick="goTo(4)">Quay lại danh sách tài khoản</button>
+  </div>
+</div>
+
+<!-- ============ S8 — SURVEY INVITATION (white) ============ -->
+<div id="s8" class="screen">
+  <div class="status-spacer" style="background:#fff;"></div>
+  <div class="scroll" style="background:#fff;">
+    <div style="padding:36px 24px 0;text-align:center;">
+      <div style="width:96px;height:96px;border-radius:48px;background:#FFF0F7;display:flex;align-items:center;justify-content:center;margin:0 auto;">
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="#E8197D"><path d="M12 21s-7-4.35-9.5-8.5C1 9 3 5.5 6.5 5.5c2 0 3.2 1.2 3.9 2.3C11.1 6.7 12.3 5.5 14.3 5.5c3.5 0 5.5 3.5 4 7C18 16.65 12 21 12 21z"/></svg>
+      </div>
+      <div style="font-size:22px;font-weight:800;margin-top:18px;">Cảm ơn bạn rất nhiều!</div>
+      <div style="font-size:14px;color:#666;margin-top:8px;line-height:1.55;">Bạn vừa hoàn tất rà soát tài khoản. Hãy dành 2 phút chia sẻ cảm nhận để MoMo cải thiện trải nghiệm nhé.</div>
+    </div>
+    <div style="padding:20px 16px 0;">
+      <div class="notice">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="2" style="flex-shrink:0;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <div class="notice-text">Chỉ <b>9 câu hỏi ngắn</b> · khoảng <b>2 phút</b>. Câu trả lời của bạn hoàn toàn ẩn danh.</div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-area" style="background:#fff;">
+    <button class="btn-pink" onclick="goTo(9)">Bắt đầu khảo sát</button>
+    <button class="btn-outline" onclick="goTo(0)">Để sau</button>
+  </div>
+</div>
+
+<!-- ============ S9 — PSSUQ-9 SURVEY ============ -->
+<div id="s9" class="screen">
+  <div class="hdr-pink">
+    <div class="status-spacer"></div>
+    <div class="nav">
+      <button class="nav-back" onclick="goTo(8)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="nav-title">Khảo sát trải nghiệm</div>
+      <div class="nav-cap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.8"><path d="M4 12a8 8 0 0116 0v4a2 2 0 01-2 2h-1v-5h3M4 12v4a2 2 0 002 2h1v-5H4"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#1A1A1A" style="margin-left:4px;"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="card" style="padding:14px 16px;">
+      <div class="input-wrap" id="uname-wrap" style="margin-bottom:0;">
+        <div class="input-label">Tên của bạn (hoặc biệt danh)</div>
+        <div class="input-row">
+          <input id="survey-username" class="input-field" type="text" placeholder="Ví dụ: An Nguyễn" oninput="checkSurveyComplete()" onfocus="focusWrap('uname-wrap')" onblur="blurWrap('uname-wrap')"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="survey-section-hdr"><div class="survey-section-hdr-text">A · Mức độ dễ sử dụng</div></div>
+    <div class="survey-q">
+      <div class="survey-q-top"><span class="survey-q-num">1</span><div class="survey-q-text"><div class="survey-q-vi">Nhìn chung, tôi hài lòng với sự dễ dàng khi thực hiện việc rà soát và xử lý các tài khoản MoMo cũ.</div></div></div>
+      <div class="survey-rate-row"><button class="survey-rate-btn" id="sq1b1" onclick="onSurveyRate(1,1)">1</button><button class="survey-rate-btn" id="sq1b2" onclick="onSurveyRate(1,2)">2</button><button class="survey-rate-btn" id="sq1b3" onclick="onSurveyRate(1,3)">3</button><button class="survey-rate-btn" id="sq1b4" onclick="onSurveyRate(1,4)">4</button><button class="survey-rate-btn" id="sq1b5" onclick="onSurveyRate(1,5)">5</button><button class="survey-rate-btn" id="sq1b6" onclick="onSurveyRate(1,6)">6</button><button class="survey-rate-btn" id="sq1b7" onclick="onSurveyRate(1,7)">7</button></div>
+      <div class="survey-scale-labels"><span>Không đồng ý</span><span>Đồng ý</span></div>
+    </div>
+    <div class="survey-q">
+      <div class="survey-q-top"><span class="survey-q-num">2</span><div class="survey-q-text"><div class="survey-q-vi">Các bước thực hiện đơn giản.</div></div></div>
+      <div class="survey-rate-row"><button class="survey-rate-btn" id="sq2b1" onclick="onSurveyRate(2,1)">1</button><button class="survey-rate-btn" id="sq2b2" onclick="onSurveyRate(2,2)">2</button><button class="survey-rate-btn" id="sq2b3" onclick="onSurveyRate(2,3)">3</button><button class="survey-rate-btn" id="sq2b4" onclick="onSurveyRate(2,4)">4</button><button class="survey-rate-btn" id="sq2b5" onclick="onSurveyRate(2,5)">5</button><button class="survey-rate-btn" id="sq2b6" onclick="onSurveyRate(2,6)">6</button><button class="survey-rate-btn" id="sq2b7" onclick="onSurveyRate(2,7)">7</button></div>
+      <div class="survey-scale-labels"><span>Không đồng ý</span><span>Đồng ý</span></div>
+    </div>
+    <div class="survey-q">
+      <div class="survey-q-top"><span class="survey-q-num">3</span><div class="survey-q-text"><div class="survey-q-vi">Tôi có thể hoàn thành thao tác một cách nhanh chóng.</div></div></div>
+      <div class="survey-rate-row"><button class="survey-rate-btn" id="sq3b1" onclick="onSurveyRate(3,1)">1</button><button class="survey-rate-btn" id="sq3b2" onclick="onSurveyRate(3,2)">2</button><button class="survey-rate-btn" id="sq3b3" onclick="onSurveyRate(3,3)">3</button><button class="survey-rate-btn" id="sq3b4" onclick="onSurveyRate(3,4)">4</button><button class="survey-rate-btn" id="sq3b5" onclick="onSurveyRate(3,5)">5</button><button class="survey-rate-btn" id="sq3b6" onclick="onSurveyRate(3,6)">6</button><button class="survey-rate-btn" id="sq3b7" onclick="onSurveyRate(3,7)">7</button></div>
+      <div class="survey-scale-labels"><span>Không đồng ý</span><span>Đồng ý</span></div>
+    </div>
+
+    <div class="survey-section-hdr"><div class="survey-section-hdr-text">B · Thông tin hướng dẫn</div></div>
+    <div class="survey-q">
+      <div class="survey-q-top"><span class="survey-q-num">4</span><div class="survey-q-text"><div class="survey-q-vi">Các thông tin hướng dẫn trong quá trình thực hiện là rõ ràng.</div></div></div>
+      <div class="survey-rate-row"><button class="survey-rate-btn" id="sq4b1" onclick="onSurveyRate(4,1)">1</button><button class="survey-rate-btn" id="sq4b2" onclick="onSurveyRate(4,2)">2</button><button class="survey-rate-btn" id="sq4b3" onclick="onSurveyRate(4,3)">3</button><button class="survey-rate-btn" id="sq4b4" onclick="onSurveyRate(4,4)">4</button><button class="survey-rate-btn" id="sq4b5" onclick="onSurveyRate(4,5)">5</button><button class="survey-rate-btn" id="sq4b6" onclick="onSurveyRate(4,6)">6</button><button class="survey-rate-btn" id="sq4b7" onclick="onSurveyRate(4,7)">7</button></div>
+      <div class="survey-scale-labels"><span>Không đồng ý</span><span>Đồng ý</span></div>
+    </div>
+    <div class="survey-q">
+      <div class="survey-q-top"><span class="survey-q-num">5</span><div class="survey-q-text"><div class="survey-q-vi">Thông tin được cung cấp đủ để tôi hoàn thành thao tác.</div></div></div>
+      <div class="survey-rate-row"><button class="survey-rate-btn" id="sq5b1" onclick="onSurveyRate(5,1)">1</button><button class="survey-rate-btn" id="sq5b2" onclick="onSurveyRate(5,2)">2</button><button class="survey-rate-btn" id="sq5b3" onclick="onSurveyRate(5,3)">3</button><button class="survey-rate-btn" id="sq5b4" onclick="onSurveyRate(5,4)">4</button><button class="survey-rate-btn" id="sq5b5" onclick="onSurveyRate(5,5)">5</button><button class="survey-rate-btn" id="sq5b6" onclick="onSurveyRate(5,6)">6</button><button class="survey-rate-btn" id="sq5b7" onclick="onSurveyRate(5,7)">7</button></div>
+      <div class="survey-scale-labels"><span>Không đồng ý</span><span>Đồng ý</span></div>
+    </div>
+    <div class="survey-q">
+      <div class="survey-q-top"><span class="survey-q-num">6</span><div class="survey-q-text"><div class="survey-q-vi">Thông tin hiển thị trong trải nghiệm này dễ hiểu.</div></div></div>
+      <div class="survey-rate-row"><button class="survey-rate-btn" id="sq6b1" onclick="onSurveyRate(6,1)">1</button><button class="survey-rate-btn" id="sq6b2" onclick="onSurveyRate(6,2)">2</button><button class="survey-rate-btn" id="sq6b3" onclick="onSurveyRate(6,3)">3</button><button class="survey-rate-btn" id="sq6b4" onclick="onSurveyRate(6,4)">4</button><button class="survey-rate-btn" id="sq6b5" onclick="onSurveyRate(6,5)">5</button><button class="survey-rate-btn" id="sq6b6" onclick="onSurveyRate(6,6)">6</button><button class="survey-rate-btn" id="sq6b7" onclick="onSurveyRate(6,7)">7</button></div>
+      <div class="survey-scale-labels"><span>Không đồng ý</span><span>Đồng ý</span></div>
+    </div>
+
+    <div class="survey-section-hdr"><div class="survey-section-hdr-text">C · Giao diện &amp; cảm nhận chung</div></div>
+    <div class="survey-q">
+      <div class="survey-q-top"><span class="survey-q-num">7</span><div class="survey-q-text"><div class="survey-q-vi">Thiết kế giao diện trải nghiệm vừa rồi mang lại cảm giác dễ chịu.</div></div></div>
+      <div class="survey-rate-row"><button class="survey-rate-btn" id="sq7b1" onclick="onSurveyRate(7,1)">1</button><button class="survey-rate-btn" id="sq7b2" onclick="onSurveyRate(7,2)">2</button><button class="survey-rate-btn" id="sq7b3" onclick="onSurveyRate(7,3)">3</button><button class="survey-rate-btn" id="sq7b4" onclick="onSurveyRate(7,4)">4</button><button class="survey-rate-btn" id="sq7b5" onclick="onSurveyRate(7,5)">5</button><button class="survey-rate-btn" id="sq7b6" onclick="onSurveyRate(7,6)">6</button><button class="survey-rate-btn" id="sq7b7" onclick="onSurveyRate(7,7)">7</button></div>
+      <div class="survey-scale-labels"><span>Không đồng ý</span><span>Đồng ý</span></div>
+    </div>
+    <div class="survey-q">
+      <div class="survey-q-top"><span class="survey-q-num">8</span><div class="survey-q-text"><div class="survey-q-vi">Tôi thích sử dụng giao diện trong quá trình trải nghiệm vừa rồi.</div></div></div>
+      <div class="survey-rate-row"><button class="survey-rate-btn" id="sq8b1" onclick="onSurveyRate(8,1)">1</button><button class="survey-rate-btn" id="sq8b2" onclick="onSurveyRate(8,2)">2</button><button class="survey-rate-btn" id="sq8b3" onclick="onSurveyRate(8,3)">3</button><button class="survey-rate-btn" id="sq8b4" onclick="onSurveyRate(8,4)">4</button><button class="survey-rate-btn" id="sq8b5" onclick="onSurveyRate(8,5)">5</button><button class="survey-rate-btn" id="sq8b6" onclick="onSurveyRate(8,6)">6</button><button class="survey-rate-btn" id="sq8b7" onclick="onSurveyRate(8,7)">7</button></div>
+      <div class="survey-scale-labels"><span>Không đồng ý</span><span>Đồng ý</span></div>
+    </div>
+    <div class="survey-q">
+      <div class="survey-q-top"><span class="survey-q-num">9</span><div class="survey-q-text"><div class="survey-q-vi">Nhìn chung, tôi hài lòng với trải nghiệm vừa rồi.</div></div></div>
+      <div class="survey-rate-row"><button class="survey-rate-btn" id="sq9b1" onclick="onSurveyRate(9,1)">1</button><button class="survey-rate-btn" id="sq9b2" onclick="onSurveyRate(9,2)">2</button><button class="survey-rate-btn" id="sq9b3" onclick="onSurveyRate(9,3)">3</button><button class="survey-rate-btn" id="sq9b4" onclick="onSurveyRate(9,4)">4</button><button class="survey-rate-btn" id="sq9b5" onclick="onSurveyRate(9,5)">5</button><button class="survey-rate-btn" id="sq9b6" onclick="onSurveyRate(9,6)">6</button><button class="survey-rate-btn" id="sq9b7" onclick="onSurveyRate(9,7)">7</button></div>
+      <div class="survey-scale-labels"><span>Không đồng ý</span><span>Đồng ý</span></div>
+    </div>
+    <div style="height:16px;"></div>
+  </div>
+  <div class="bottom-area">
+    <button id="btn-survey-submit" class="btn-pink" disabled onclick="submitSurvey()">Gửi khảo sát</button>
+  </div>
+</div>
+
+<!-- ============ S10 — SURVEY THANK YOU (white) ============ -->
+<div id="s10" class="screen">
+  <div class="status-spacer" style="background:#fff;"></div>
+  <div class="scroll" style="background:#fff;">
+    <div style="padding:44px 24px 0;text-align:center;">
+      <div style="font-size:72px;line-height:1;">🥰</div>
+      <div style="font-size:22px;font-weight:800;margin-top:16px;">Bạn thật tuyệt vời!</div>
+      <div style="font-size:14px;color:#666;margin-top:8px;line-height:1.55;">Cảm ơn bạn đã dành thời gian chia sẻ. Phản hồi của bạn giúp MoMo an toàn hơn cho mọi người.</div>
+    </div>
+    <div style="padding:22px 16px 0;">
+      <div class="notice">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#E8197D"><path d="M12 21s-7-4.35-9.5-8.5C1 9 3 5.5 6.5 5.5c2 0 3.2 1.2 3.9 2.3C11.1 6.7 12.3 5.5 14.3 5.5c3.5 0 5.5 3.5 4 7C18 16.65 12 21 12 21z"/></svg>
+        <div class="notice-text">Hẹn gặp lại bạn lần sau nhé! 👋</div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-area" style="background:#fff;">
+    <button class="btn-pink" onclick="goTo(0)">Về trang chủ MoMo</button>
+  </div>
+</div>
+
+</div><!-- /#app -->
+<div id="kb-cta"></div>
+
+<script>
+'use strict';
+
+var HOME_SCREEN_INDEX = 0;
+var SURVEY_THANKYOU_SCREEN = 10;
+var SURVEY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwx_U1o6vHDrSRtM0qf6emY74j9efq-pI5Z5BRThG-zLZz-wi9QkzTRcPW26a3vEYnDAA/exec';
+var whiteScreens = {1:1,7:1,8:1,10:1};
+
+var svgEye = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+var svgEyeOff = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="2"><path d="M3 3l18 18M10.6 10.7a3 3 0 004 4M6.5 6.6C4 8.2 2 12 2 12s3.5 7 10 7c1.7 0 3.2-.4 4.5-1M9.9 5.2A9.6 9.6 0 0112 5c6.5 0 10 7 10 7a17 17 0 01-2.4 3.2"/></svg>';
+
+/* ---------- data ---------- */
+var accounts = [
+  {id:'a0', phone:'0987 654 321', initials:'AN', current:true, status:'active',
+   created:'03/2018', lastActive:'Hôm nay', balance:1284500,
+   bank:{name:'Vietcombank', masked:'•••• 9034'},
+   services:['Tự động thanh toán FPT', 'Ví trả sau'], txCount:1240, kyc:true},
+  {id:'a1', phone:'0912 345 678', initials:'AN', current:false, status:'abandoned',
+   created:'06/2019', lastActive:'2 năm trước', balance:152000,
+   bank:{name:'Vietcombank', masked:'•••• 4821'},
+   services:['Tự động thanh toán Điện lực EVN'], txCount:340, kyc:true},
+  {id:'a2', phone:'0978 111 222', initials:'AN', current:false, status:'abandoned',
+   created:'01/2021', lastActive:'18 tháng trước', balance:0,
+   bank:{name:'Techcombank', masked:'•••• 7719'},
+   services:[], txCount:89, kyc:true},
+  {id:'a3', phone:'0933 555 888', initials:'AN', current:false, status:'abandoned',
+   created:'09/2022', lastActive:'11 tháng trước', balance:25500,
+   bank:null,
+   services:['Đăng ký gói Netflix hàng tháng'], txCount:12, kyc:true}
+];
+
+var currentAccountId = null;
+var pendingAction = null; /* 'terminate' | 'unlink' */
+var ackChecked = false;
+
+/* ---------- helpers ---------- */
+function fmtMoney(n){
+  var s = String(n);
+  var out = '';
+  var c = 0;
+  var i;
+  for(i = s.length - 1; i >= 0; i--){
+    out = s.charAt(i) + out;
+    c++;
+    if(c % 3 === 0 && i > 0){ out = '.' + out; }
+  }
+  return out + '₫';
+}
+function getAccount(id){
+  var i;
+  for(i = 0; i < accounts.length; i++){ if(accounts[i].id === id){ return accounts[i]; } }
+  return null;
+}
+function countActionable(){
+  var c = 0;
+  var i;
+  for(i = 0; i < accounts.length; i++){
+    if(!accounts[i].current && accounts[i].status === 'abandoned'){ c++; }
+  }
+  return c;
+}
+
+/* ---------- navigation ---------- */
+function goTo(n){
+  hideKbCta();
+  var cur = document.querySelector('.screen.active');
+  var next = document.getElementById('s' + n);
+  if(!next){ return; }
+
+  if(n === 4){ renderAccountsList(); }
+  if(n === 3){ resetOtp(); }
+  if(n === 6){ resetConfirm(); }
+  if(n === 9){ resetSurvey(); }
+
+  if(cur && cur !== next){
+    cur.classList.remove('active');
+    cur.classList.add('leaving');
+    var leaving = cur;
+    setTimeout(function(){ leaving.classList.remove('leaving'); }, 340);
+  }
+  next.classList.add('active');
+
+  /* theme-color + body bg */
+  var tc = document.getElementById('theme-color');
+  if(n === HOME_SCREEN_INDEX){
+    tc.setAttribute('content', '#AF1168');
+    document.body.style.background = '#F5F5F5';
+    document.documentElement.style.background = '#F5F5F5';
+    initHomeScroll();
+  } else if(whiteScreens[n]){
+    tc.setAttribute('content', '#FFFFFF');
+    document.body.style.background = '#FFFFFF';
+    document.documentElement.style.background = '#FFFFFF';
+  } else {
+    tc.setAttribute('content', '#FFE4F0');
+    document.body.style.background = '#F5F5F5';
+    document.documentElement.style.background = '#F5F5F5';
+  }
+
+  var sc = next.querySelector('.scroll');
+  if(sc && n !== HOME_SCREEN_INDEX){ sc.scrollTop = 0; }
+}
+
+/* ---------- S2 verify ---------- */
+function submitVerify(){ goTo(3); }
+
+/* ---------- S3 OTP ---------- */
+var otpTimerId = null;
+function resetOtp(){
+  var i;
+  for(i = 0; i < 4; i++){ document.getElementById('otp' + i).value = ''; }
+  document.getElementById('otp-row').classList.remove('error');
+  var t = 30;
+  var el = document.getElementById('otp-timer');
+  el.innerHTML = 'Gửi lại mã sau <b style="color:#1A1A1A;">' + t + '</b>s';
+  if(otpTimerId){ clearInterval(otpTimerId); }
+  otpTimerId = setInterval(function(){
+    t--;
+    if(t <= 0){
+      clearInterval(otpTimerId); otpTimerId = null;
+      el.innerHTML = '<span style="color:#E91E8C;font-weight:600;">Gửi lại mã</span>';
+    } else {
+      el.innerHTML = 'Gửi lại mã sau <b style="color:#1A1A1A;">' + t + '</b>s';
+    }
+  }, 1000);
+}
+function otpInput(el, idx){
+  document.getElementById('otp-row').classList.remove('error');
+  el.value = el.value.replace(/[^0-9]/g, '');
+  if(el.value.length > 0 && idx < 3){ document.getElementById('otp' + (idx + 1)).focus(); }
+}
+function otpKey(e, idx){
+  if(e.key === 'Backspace' && e.target.value === '' && idx > 0){
+    document.getElementById('otp' + (idx - 1)).focus();
+  }
+}
+function demoOtp(){
+  var i;
+  var vals = ['1','2','3','4'];
+  for(i = 0; i < 4; i++){ document.getElementById('otp' + i).value = vals[i]; }
+  document.getElementById('otp-row').classList.remove('error');
+}
+function submitOtp(){
+  var i;
+  var code = '';
+  for(i = 0; i < 4; i++){ code += document.getElementById('otp' + i).value; }
+  if(code.length < 4){
+    var row = document.getElementById('otp-row');
+    row.classList.remove('error');
+    void row.offsetWidth;
+    row.classList.add('error');
+    document.getElementById('otp0').focus();
+    return;
+  }
+  goTo(4);
+}
+
+/* ---------- S4 accounts list ---------- */
+function renderAccountsList(){
+  var cnt = countActionable();
+  document.getElementById('list-summary-text').innerHTML =
+    'Tìm thấy <b style="color:#E8197D;">' + (cnt + 1) + ' tài khoản</b> MoMo cùng số CCCD 0790 •••• •• 45. ' +
+    (cnt > 0 ? ('<b>' + cnt + '</b> tài khoản cũ nên được xử lý.') : 'Tất cả tài khoản cũ đã được xử lý. 🎉');
+
+  /* current */
+  var cur = getAccount('a0');
+  var cw = document.getElementById('current-acct-wrap');
+  cw.innerHTML = accountCardHtml(cur, false);
+
+  /* old */
+  var ow = document.getElementById('old-accts-wrap');
+  var html = '';
+  var i;
+  var anyOld = false;
+  for(i = 0; i < accounts.length; i++){
+    if(accounts[i].current){ continue; }
+    anyOld = true;
+    html += accountCardHtml(accounts[i], accounts[i].status === 'abandoned');
+  }
+  ow.innerHTML = html;
+  document.getElementById('old-label').style.display = anyOld ? 'block' : 'none';
+}
+function accountCardHtml(a, tappable){
+  var badge;
+  if(a.current){ badge = '<span class="badge badge-green">● Đang dùng</span>'; }
+  else if(a.status === 'terminated'){ badge = '<span class="badge badge-gray">Đã hủy</span>'; }
+  else if(a.status === 'unlinked'){ badge = '<span class="badge badge-amber">Đã gỡ ngân hàng</span>'; }
+  else { badge = '<span class="badge badge-red">Bỏ quên</span>'; }
+
+  var tapClass = tappable ? ' tappable' : '';
+  var onclick = tappable ? (' onclick="openAccount(\'' + a.id + '\')"') : '';
+
+  var metrics = '';
+  if(a.status !== 'terminated'){
+    var balColor = a.balance > 0 ? '#E8197D' : '#999';
+    metrics += '<div class="metric-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="' + balColor + '" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg><span style="color:' + balColor + ';">' + fmtMoney(a.balance) + '</span></div>';
+    if(a.bank){
+      metrics += '<div class="metric-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg><span>' + a.bank.name + '</span></div>';
+    }
+    if(a.services.length > 0){
+      metrics += '<div class="metric-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><path d="M4 12h16M4 6h16M4 18h16"/></svg><span>' + a.services.length + ' dịch vụ</span></div>';
+    }
+  }
+
+  var chevron = tappable ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#CCC" stroke-width="2" style="flex-shrink:0;"><path d="M9 6l6 6-6 6"/></svg>' : '';
+
+  return '<div class="acct-card' + tapClass + '"' + onclick + '>' +
+    '<div class="acct-top">' +
+      '<div class="acct-avatar">' + a.initials + '</div>' +
+      '<div style="flex:1;">' +
+        '<div class="acct-phone">' + a.phone + '</div>' +
+        '<div class="acct-sub">Tạo ' + a.created + ' · Hoạt động ' + a.lastActive + '</div>' +
+      '</div>' + badge + chevron +
+    '</div>' +
+    (metrics ? ('<div class="acct-metrics">' + metrics + '</div>') : '') +
+  '</div>';
+}
+
+/* ---------- S5 detail ---------- */
+function openAccount(id){
+  currentAccountId = id;
+  renderDetail();
+  goTo(5);
+}
+function renderDetail(){
+  var a = getAccount(currentAccountId);
+  if(!a){ return; }
+  var sc = document.getElementById('detail-scroll');
+
+  var warn = '<div style="padding:2px 16px 0;"><div class="warn-notice">' +
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F44336" stroke-width="2" style="flex-shrink:0;"><path d="M12 2l10 18H2z"/><path d="M12 9v5M12 17h.01"/></svg>' +
+    '<div class="warn-notice-text">Tài khoản này gắn với số điện thoại bạn không còn dùng. Nếu SIM bị thu hồi và bán lại, người khác có thể chiếm quyền truy cập.</div>' +
+    '</div></div>';
+
+  var head = '<div class="card" style="text-align:center;">' +
+    '<div class="acct-avatar" style="width:60px;height:60px;border-radius:30px;font-size:22px;margin:4px auto 0;">' + a.initials + '</div>' +
+    '<div style="font-size:19px;font-weight:800;margin-top:10px;">' + a.phone + '</div>' +
+    '<div style="margin-top:6px;"><span class="badge badge-red">Bỏ quên · ' + a.lastActive + '</span></div>' +
+  '</div>';
+
+  var bankRow = a.bank
+    ? ('<div class="dl-row"><span class="dl-label">Liên kết ngân hàng</span><span class="dl-value">' + a.bank.name + ' ' + a.bank.masked + '</span></div>')
+    : ('<div class="dl-row"><span class="dl-label">Liên kết ngân hàng</span><span class="dl-value" style="color:#999;">Không có</span></div>');
+
+  var svcRow;
+  if(a.services.length > 0){
+    var svcList = '';
+    var i;
+    for(i = 0; i < a.services.length; i++){
+      svcList += '<div style="font-size:13px;color:#1A1A1A;font-weight:600;margin-top:' + (i === 0 ? '0' : '4') + 'px;">• ' + a.services[i] + '</div>';
+    }
+    svcRow = '<div class="dl-row" style="align-items:flex-start;"><span class="dl-label" style="padding-top:1px;">Dịch vụ liên kết</span><span class="dl-value" style="max-width:60%;">' + svcList + '</span></div>';
+  } else {
+    svcRow = '<div class="dl-row"><span class="dl-label">Dịch vụ liên kết</span><span class="dl-value" style="color:#999;">Không có</span></div>';
+  }
+
+  var balColor = a.balance > 0 ? '#E8197D' : '#1A1A1A';
+  var body = '<div class="section-label">Còn lại trong tài khoản</div><div class="card" style="padding:4px 16px;">' +
+    '<div class="dl-row"><span class="dl-label">Số dư ví</span><span class="dl-value" style="color:' + balColor + ';font-size:16px;">' + fmtMoney(a.balance) + '</span></div>' +
+    bankRow + svcRow +
+    '<div class="dl-row"><span class="dl-label">Lịch sử giao dịch</span><span class="dl-value">' + a.txCount + ' giao dịch</span></div>' +
+    '<div class="dl-row"><span class="dl-label">Thông tin KYC (CCCD)</span><span class="dl-value">Đã lưu</span></div>' +
+  '</div>';
+
+  var hint = '<div class="section-label">Bạn có thể làm gì?</div>' +
+    '<div style="padding:0 12px;">' +
+      (a.bank ? '<div style="font-size:13px;color:#666;line-height:1.6;margin-bottom:6px;">• <b style="color:#1A1A1A;">Gỡ liên kết ngân hàng</b> — tách thẻ/tài khoản khỏi ví cũ nhưng vẫn giữ lại tài khoản.</div>' : '') +
+      '<div style="font-size:13px;color:#666;line-height:1.6;">• <b style="color:#1A1A1A;">Hủy tài khoản</b> — xóa vĩnh viễn ví, KYC và mọi liên kết. Số dư sẽ được hoàn trước khi hủy.</div>' +
+    '</div>';
+
+  sc.innerHTML = warn + head + body + hint + '<div style="height:16px;"></div>';
+
+  /* actions */
+  var act = document.getElementById('detail-actions');
+  var btns = '';
+  if(a.bank){
+    btns += '<button class="btn-pink" onclick="chooseAction(\'unlink\')">Gỡ liên kết ngân hàng</button>';
+    btns += '<button class="btn-danger-outline" onclick="chooseAction(\'terminate\')">Hủy tài khoản này</button>';
+  } else {
+    btns += '<button class="btn-danger" onclick="chooseAction(\'terminate\')">Hủy tài khoản này</button>';
+  }
+  act.innerHTML = btns;
+}
+
+/* ---------- S6 confirm ---------- */
+function chooseAction(a){
+  pendingAction = a;
+  renderConfirm();
+  goTo(6);
+}
+function resetConfirm(){
+  ackChecked = false;
+  document.getElementById('ack-box').classList.remove('on');
+  document.getElementById('ack-row').classList.remove('error');
+  document.getElementById('pin-wrap').classList.remove('error');
+  kPinRaw['auth-pin'] = '';
+  var pin = document.getElementById('auth-pin');
+  pin.value = '';
+  pin.dataset.revealed = '0';
+  document.getElementById('pin-eye').innerHTML = svgEye;
+}
+function renderConfirm(){
+  var a = getAccount(currentAccountId);
+  var body = document.getElementById('confirm-body');
+  var title = document.getElementById('confirm-nav-title');
+  var ackText = document.getElementById('ack-text');
+  var actions = document.getElementById('confirm-actions');
+
+  if(pendingAction === 'terminate'){
+    title.textContent = 'Hủy tài khoản';
+    var balLine = a.balance > 0
+      ? ('<div class="dl-row"><span class="dl-label">Hoàn số dư</span><span class="dl-value" style="color:#E8197D;">' + fmtMoney(a.balance) + ' → ' + (a.bank ? a.bank.name : 'ngân hàng') + '</span></div>')
+      : ('<div class="dl-row"><span class="dl-label">Số dư</span><span class="dl-value" style="color:#999;">0₫</span></div>');
+    body.innerHTML =
+      '<div style="padding:8px 16px 0;"><div class="warn-notice">' +
+        '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F44336" stroke-width="2" style="flex-shrink:0;"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>' +
+        '<div class="warn-notice-text"><b>Hành động không thể hoàn tác.</b> Ví, thông tin KYC, lịch sử giao dịch và mọi liên kết của tài khoản này sẽ bị xóa vĩnh viễn.</div>' +
+      '</div></div>' +
+      '<div class="section-label">Bạn đang hủy</div>' +
+      '<div class="card" style="padding:4px 16px;">' +
+        '<div class="dl-row"><span class="dl-label">Tài khoản</span><span class="dl-value">' + a.phone + '</span></div>' +
+        balLine +
+        (a.bank ? ('<div class="dl-row"><span class="dl-label">Gỡ ngân hàng</span><span class="dl-value">' + a.bank.name + ' ' + a.bank.masked + '</span></div>') : '') +
+        (a.services.length > 0 ? ('<div class="dl-row"><span class="dl-label">Hủy dịch vụ</span><span class="dl-value">' + a.services.length + ' dịch vụ</span></div>') : '') +
+      '</div>';
+    ackText.innerHTML = 'Tôi hiểu tài khoản <b>' + a.phone + '</b> sẽ bị xóa vĩnh viễn và không thể khôi phục.';
+    actions.innerHTML = '<button class="btn-danger" onclick="submitConfirm()">Xác nhận hủy tài khoản</button>' +
+      '<button class="btn-outline" onclick="goTo(5)">Quay lại</button>';
+  } else {
+    title.textContent = 'Gỡ liên kết ngân hàng';
+    body.innerHTML =
+      '<div style="padding:8px 16px 0;"><div class="notice">' +
+        '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8197D" stroke-width="2" style="flex-shrink:0;"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>' +
+        '<div class="notice-text">Tài khoản ví vẫn được giữ lại, chỉ <b>gỡ bỏ liên kết ngân hàng</b> để thẻ của bạn không còn gắn với ví cũ.</div>' +
+      '</div></div>' +
+      '<div class="section-label">Bạn đang gỡ liên kết</div>' +
+      '<div class="card" style="padding:4px 16px;">' +
+        '<div class="dl-row"><span class="dl-label">Tài khoản ví</span><span class="dl-value">' + a.phone + '</span></div>' +
+        '<div class="dl-row"><span class="dl-label">Ngân hàng</span><span class="dl-value">' + a.bank.name + ' ' + a.bank.masked + '</span></div>' +
+      '</div>';
+    ackText.innerHTML = 'Tôi muốn gỡ liên kết <b>' + a.bank.name + ' ' + a.bank.masked + '</b> khỏi tài khoản này.';
+    actions.innerHTML = '<button class="btn-pink" onclick="submitConfirm()">Xác nhận gỡ liên kết</button>' +
+      '<button class="btn-outline" onclick="goTo(5)">Quay lại</button>';
+  }
+}
+function toggleAck(){
+  ackChecked = !ackChecked;
+  var box = document.getElementById('ack-box');
+  if(ackChecked){ box.classList.add('on'); } else { box.classList.remove('on'); }
+  document.getElementById('ack-row').classList.remove('error');
+}
+function submitConfirm(){
+  if(!ackChecked){
+    var row = document.getElementById('ack-row');
+    row.classList.remove('error');
+    void row.offsetWidth;
+    row.classList.add('error');
+    return;
+  }
+  if((kPinRaw['auth-pin'] || '').length !== 6){
+    highlightError('pin-wrap');
+    return;
+  }
+  applyAction();
+  renderSuccess();
+  goTo(7);
+}
+function applyAction(){
+  var a = getAccount(currentAccountId);
+  if(!a){ return; }
+  if(pendingAction === 'terminate'){
+    a.status = 'terminated';
+    a.balance = 0;
+    a.bank = null;
+    a.services = [];
+  } else {
+    a.status = 'unlinked';
+    a.bank = null;
+  }
+}
+
+/* ---------- S7 success ---------- */
+function renderSuccess(){
+  var a = getAccount(currentAccountId);
+  var t = document.getElementById('success-title');
+  var s = document.getElementById('success-sub');
+  var sum = document.getElementById('success-summary');
+  var note = document.getElementById('success-note-text');
+  if(pendingAction === 'terminate'){
+    t.textContent = 'Đã hủy tài khoản';
+    s.innerHTML = 'Tài khoản <b>' + a.phone + '</b> cùng toàn bộ thông tin đã được xóa vĩnh viễn.';
+    sum.innerHTML =
+      '<div class="dl-row"><span class="dl-label">Tài khoản</span><span class="dl-value">' + a.phone + '</span></div>' +
+      '<div class="dl-row"><span class="dl-label">Trạng thái</span><span class="dl-value" style="color:#4CAF50;">Đã xóa</span></div>' +
+      '<div class="dl-row"><span class="dl-label">Số dư hoàn về</span><span class="dl-value">Đang xử lý (1-3 ngày)</span></div>';
+    note.innerHTML = 'Thông tin KYC và lịch sử của tài khoản này đã được gỡ khỏi hệ thống. Người mua lại SIM cũ sẽ <b>không thể</b> truy cập.';
+  } else {
+    t.textContent = 'Đã gỡ liên kết';
+    s.innerHTML = 'Ngân hàng đã được tách khỏi tài khoản <b>' + a.phone + '</b>.';
+    sum.innerHTML =
+      '<div class="dl-row"><span class="dl-label">Tài khoản ví</span><span class="dl-value">' + a.phone + '</span></div>' +
+      '<div class="dl-row"><span class="dl-label">Trạng thái</span><span class="dl-value" style="color:#4CAF50;">Đã gỡ ngân hàng</span></div>';
+    note.innerHTML = 'Thẻ/tài khoản ngân hàng của bạn không còn gắn với ví cũ. Bạn vẫn có thể hủy hẳn tài khoản này sau nếu muốn.';
+  }
+}
+function afterSuccessNext(){ goTo(8); }
+
+/* ---------- PIN masking (single field) ---------- */
+var kPinRaw = {'auth-pin': ''};
+var kPinMask = '•';
+function pinMaskInput(el){
+  var id = el.id;
+  var prev = kPinRaw[id] || '';
+  var cur = el.value;
+  var retained = 0;
+  var added = '';
+  var i;
+  for(i = 0; i < cur.length; i++){
+    if(cur.charAt(i) === kPinMask){ retained++; }
+    else if(/[0-9]/.test(cur.charAt(i))){ added += cur.charAt(i); }
+  }
+  var raw = prev.slice(0, retained) + added;
+  kPinRaw[id] = raw.slice(0, 6);
+  if(el.dataset.revealed !== '1'){
+    el.value = kPinRaw[id].replace(/./g, kPinMask);
+  }
+}
+function onAuthPin(){
+  pinMaskInput(document.getElementById('auth-pin'));
+}
+function togglePwd(fid, eyeId){
+  var f = document.getElementById(fid);
+  var e = document.getElementById(eyeId);
+  if(f.classList.contains('pin-field')){
+    var revealed = f.dataset.revealed === '1';
+    if(revealed){
+      f.value = (kPinRaw[fid] || '').replace(/./g, kPinMask);
+      f.dataset.revealed = '0'; e.innerHTML = svgEye;
+    } else {
+      f.value = kPinRaw[fid] || '';
+      f.dataset.revealed = '1'; e.innerHTML = svgEyeOff;
+    }
+  }
+}
+function demoPin(){
+  kPinRaw['auth-pin'] = '135790';
+  var f = document.getElementById('auth-pin');
+  f.value = kPinMask + kPinMask + kPinMask + kPinMask + kPinMask + kPinMask;
+  f.dataset.revealed = '0';
+  document.getElementById('pin-eye').innerHTML = svgEye;
+  document.getElementById('pin-wrap').classList.remove('error');
+}
+
+/* ---------- error highlight + focus ---------- */
+function highlightError(id){
+  var wrap = document.getElementById(id);
+  if(!wrap){ return; }
+  wrap.classList.remove('error');
+  void wrap.offsetWidth;
+  wrap.classList.add('error');
+  var inp = wrap.querySelector('input,select');
+  if(inp){ inp.focus(); }
+}
+function focusWrap(id){
+  var el = document.getElementById(id);
+  el.classList.add('focused');
+  el.classList.remove('error');
+  scheduleShowKbCta();
+}
+function blurWrap(id){
+  var el = document.getElementById(id);
+  el.classList.remove('focused');
+  scheduleHideKbCta();
+}
+
+/* ---------- keyboard CTA clone ---------- */
+var kbOrigArea = null;
+var kbHideTimer = null;
+var kbShowTimer = null;
+var kbObserver = null;
+var kbLastOffsetTop = 0;
+function kbSyncState(){
+  if(!kbOrigArea){ return; }
+  var el = document.getElementById('kb-cta');
+  var origBtns = kbOrigArea.querySelectorAll('button');
+  var cloneBtns = el.querySelectorAll('button');
+  var len = Math.min(origBtns.length, cloneBtns.length);
+  var i;
+  for(i = 0; i < len; i++){ cloneBtns[i].disabled = origBtns[i].disabled; }
+}
+function startKbObserver(){
+  if(!kbOrigArea || kbObserver){ return; }
+  kbObserver = new MutationObserver(kbSyncState);
+  kbObserver.observe(kbOrigArea, {subtree:true, attributes:true, attributeFilter:['disabled']});
+}
+function stopKbObserver(){
+  if(kbObserver){ kbObserver.disconnect(); kbObserver = null; }
+}
+function showKbCta(){
+  if(kbOrigArea){ return; }
+  var scr = document.querySelector('.screen.active');
+  if(!scr){ return; }
+  var orig = scr.querySelector('.bottom-area');
+  if(!orig){ return; }
+  kbOrigArea = orig;
+  var el = document.getElementById('kb-cta');
+  el.innerHTML = '';
+  el.appendChild(orig.cloneNode(true));
+  el.style.display = 'block';
+  orig.style.visibility = 'hidden';
+  startKbObserver();
+  setTimeout(updateKbCtaPos, 0);
+}
+function hideKbCta(){
+  if(kbShowTimer){ clearTimeout(kbShowTimer); kbShowTimer = null; }
+  if(kbHideTimer){ clearTimeout(kbHideTimer); kbHideTimer = null; }
+  stopKbObserver();
+  var el = document.getElementById('kb-cta');
+  el.style.display = 'none';
+  el.style.top = '';
+  el.innerHTML = '';
+  if(kbOrigArea){ kbOrigArea.style.visibility = ''; kbOrigArea = null; }
+  kbLastOffsetTop = 0;
+}
+function updateKbCtaPos(){
+  var vv = window.visualViewport;
+  var el = document.getElementById('kb-cta');
+  if(!vv || el.style.display === 'none'){ return; }
+  var ctaH = el.offsetHeight || 80;
+  el.style.top = (vv.offsetTop + vv.height - ctaH) + 'px';
+  el.style.bottom = 'auto';
+}
+function scheduleShowKbCta(){
+  if(kbHideTimer){ clearTimeout(kbHideTimer); kbHideTimer = null; }
+  if(kbShowTimer){ clearTimeout(kbShowTimer); kbShowTimer = null; }
+  kbShowTimer = setTimeout(function(){ kbShowTimer = null; showKbCta(); }, 350);
+}
+function scheduleHideKbCta(){
+  if(kbShowTimer){ clearTimeout(kbShowTimer); kbShowTimer = null; }
+  kbHideTimer = setTimeout(function(){
+    kbHideTimer = null;
+    var vv = window.visualViewport;
+    if(vv && Math.round(window.innerHeight - vv.height) > 100){ return; }
+    hideKbCta();
+  }, 200);
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', function(){
+    var kbH = Math.round(window.innerHeight - window.visualViewport.height);
+    if(kbH < 100){ hideKbCta(); }
+    else if(kbOrigArea){ updateKbCtaPos(); }
+  });
+  window.visualViewport.addEventListener('scroll', function(){
+    var ot = Math.round(window.visualViewport.offsetTop);
+    if(ot !== kbLastOffsetTop){ kbLastOffsetTop = ot; updateKbCtaPos(); }
+  });
+}
+
+/* ---------- homescreen collapsible header ---------- */
+var headerCollapsed = false;
+function initHomeScroll(){
+  var scrollEl = document.getElementById('home-scroll');
+  var fullHeader = document.getElementById('home-header-full');
+  var miniHeader = document.getElementById('home-mini');
+  if(!scrollEl || !fullHeader || !miniHeader){ return; }
+  setTimeout(function(){
+    var fullH = fullHeader.offsetHeight;
+    var miniInner = miniHeader.querySelector('.home-mini-inner');
+    var spacer = document.querySelector('#s0 .status-spacer');
+    var miniH = (miniInner ? miniInner.offsetHeight : 90) + (spacer ? spacer.offsetHeight : 24);
+    scrollEl.style.paddingTop = fullH + 'px';
+    if(scrollEl._homeScrollFn){ scrollEl.removeEventListener('scroll', scrollEl._homeScrollFn); }
+    var collapsed = false;
+    scrollEl._homeScrollFn = function(){
+      var st = scrollEl.scrollTop;
+      if(st > 50 && !collapsed){
+        collapsed = true;
+        fullHeader.classList.add('collapsed');
+        miniHeader.classList.add('visible');
+        scrollEl.style.paddingTop = miniH + 'px';
+      } else if(st <= 10 && collapsed){
+        collapsed = false;
+        fullHeader.classList.remove('collapsed');
+        miniHeader.classList.remove('visible');
+        scrollEl.style.paddingTop = fullH + 'px';
+      }
+    };
+    scrollEl.addEventListener('scroll', scrollEl._homeScrollFn);
+    headerCollapsed = false;
+    fullHeader.classList.remove('collapsed');
+    miniHeader.classList.remove('visible');
+    scrollEl.style.paddingTop = fullH + 'px';
+    scrollEl.scrollTop = 0;
+  }, 50);
+}
+
+/* ---------- survey ---------- */
+var surveyAnswers = {};
+function onSurveyRate(q, val){
+  surveyAnswers[q] = val;
+  var sv;
+  for(sv = 1; sv <= 7; sv++){
+    var sbtn = document.getElementById('sq' + q + 'b' + sv);
+    if(sbtn){
+      if(sv === val){ sbtn.classList.add('sel'); }
+      else { sbtn.classList.remove('sel'); }
+    }
+  }
+  checkSurveyComplete();
+}
+function checkSurveyComplete(){
+  var hasName = document.getElementById('survey-username').value.trim().length > 0;
+  var done = hasName;
+  var sq;
+  for(sq = 1; sq <= 9; sq++){
+    if(!surveyAnswers[sq]){ done = false; break; }
+  }
+  document.getElementById('btn-survey-submit').disabled = !done;
+}
+function resetSurvey(){
+  surveyAnswers = {};
+  var sq, sv;
+  for(sq = 1; sq <= 9; sq++){
+    for(sv = 1; sv <= 7; sv++){
+      var sbtn = document.getElementById('sq' + sq + 'b' + sv);
+      if(sbtn){ sbtn.classList.remove('sel'); }
+    }
+  }
+  document.getElementById('survey-username').value = '';
+  document.getElementById('btn-survey-submit').disabled = true;
+}
+function submitSurvey(){
+  var btn = document.getElementById('btn-survey-submit');
+  btn.disabled = true;
+  btn.textContent = 'Đang gửi...';
+  var username = encodeURIComponent(document.getElementById('survey-username').value.trim());
+  var params = 'username=' + username +
+    '&q1=' + (surveyAnswers[1] || '') +
+    '&q2=' + (surveyAnswers[2] || '') +
+    '&q3=' + (surveyAnswers[3] || '') +
+    '&q4=' + (surveyAnswers[4] || '') +
+    '&q5=' + (surveyAnswers[5] || '') +
+    '&q6=' + (surveyAnswers[6] || '') +
+    '&q7=' + (surveyAnswers[7] || '') +
+    '&q8=' + (surveyAnswers[8] || '') +
+    '&q9=' + (surveyAnswers[9] || '');
+  fetch(SURVEY_ENDPOINT + '?' + params, {method:'GET', mode:'no-cors'})
+    .then(function(){ goTo(SURVEY_THANKYOU_SCREEN); })
+    .catch(function(){
+      btn.disabled = false;
+      btn.textContent = 'Gửi khảo sát';
+    });
+}
+
+/* ---------- iOS bounce prevention ---------- */
+document.addEventListener('touchmove', function(e){
+  if(!e.target.closest('.scroll')){ e.preventDefault(); }
+}, {passive:false});
+
+/* ---------- PWA ---------- */
+if('serviceWorker' in navigator && location.protocol === 'https:'){
+  navigator.serviceWorker.register('./sw.js').catch(function(){});
+}
+
+/* ---------- init ---------- */
+goTo(0);
+</script>
+</body>
+</html>
